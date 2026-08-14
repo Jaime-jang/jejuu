@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>🌴우당탕탕 제주 랜덤 자리배치🌴</title>
+<style>
+  :root{
+    --bg:#17191d;
+    --panel:#24272d;
+    --panel2:#2d3138;
+    --line:#565d68;
+    --text:#f5f7fa;
+    --muted:#aab2bf;
+    --accent:#f3f4f6;
+    --seat:#3a3f48;
+    --fixed:#59616e;
+    --empty:#252930;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(circle at 50% 10%, #343943 0, #1f2228 35%, #121418 100%);
+    display:flex;
+    justify-content:center;
+    padding:28px 16px 42px;
+  }
+  .app{width:min(920px,100%)}
+  h1{margin:0 0 8px;text-align:center;font-size:clamp(26px,4vw,42px)}
+  .sub{margin:0 0 24px;text-align:center;color:var(--muted);line-height:1.6}
+  .controls{
+    background:rgba(36,39,45,.94);
+    border:1px solid #424852;
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 18px 50px rgba(0,0,0,.24);
+    margin-bottom:22px;
+  }
+  .inputs{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:10px;
+  }
+  input{
+    width:100%;
+    border:1px solid #535b67;
+    background:#181b20;
+    color:white;
+    border-radius:12px;
+    padding:13px 12px;
+    font-size:15px;
+    outline:none;
+  }
+  input:focus{border-color:#aeb7c4;box-shadow:0 0 0 3px rgba(255,255,255,.06)}
+  .actions{display:flex;gap:10px;margin-top:14px}
+  button{
+    flex:1;
+    border:0;
+    border-radius:13px;
+    padding:14px 16px;
+    font-size:16px;
+    font-weight:800;
+    cursor:pointer;
+    transition:.15s ease;
+  }
+  #shuffle{background:#f6f7f9;color:#17191d}
+  #shuffle:hover{transform:translateY(-1px);background:white}
+  #reset{background:#3a4049;color:#fff}
+  #reset:hover{background:#464d58}
+
+  .car{
+    position:relative;
+    margin:auto;
+    width:min(620px,100%);
+    background:linear-gradient(90deg,#1a1d22,#30343c 8%,#252930 50%,#30343c 92%,#1a1d22);
+    border:3px solid #4b525d;
+    border-radius:80px 80px 56px 56px;
+    padding:42px 34px 34px;
+    box-shadow:inset 0 0 40px rgba(0,0,0,.45),0 24px 60px rgba(0,0,0,.3);
+  }
+  .windshield{
+    height:34px;
+    margin:-22px 56px 28px;
+    border-radius:50% 50% 12px 12px;
+    background:linear-gradient(#5c6876,#303842);
+    border:1px solid #75808d;
+    opacity:.7;
+  }
+  .row{
+    display:grid;
+    gap:16px;
+    margin-bottom:24px;
+    align-items:center;
+  }
+  .row.two{grid-template-columns:1fr 1fr}
+  .row.three{grid-template-columns:1fr 1fr 1fr}
+  .row-label{
+    color:#919aa7;
+    text-align:center;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.06em;
+    margin:-10px 0 8px;
+  }
+  .seat{
+    min-height:96px;
+    background:linear-gradient(#464c56,#333840);
+    border:1px solid #5d6571;
+    border-radius:22px 22px 16px 16px;
+    padding:12px 8px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    box-shadow:inset 0 -8px 0 rgba(0,0,0,.12),0 5px 10px rgba(0,0,0,.12);
+    position:relative;
+    overflow:hidden;
+  }
+  .seat::before{
+    content:"";
+    position:absolute;
+    top:7px;left:18%;right:18%;
+    height:7px;border-radius:10px;
+    background:rgba(255,255,255,.055);
+  }
+  .seat.fixed{background:linear-gradient(#5d6673,#444b55)}
+  .seat.empty{
+    background:#24282e;
+    border:1px dashed #535b66;
+    color:#727b87;
+    box-shadow:none;
+  }
+  .role{font-size:12px;color:#c5cbd4;margin-bottom:5px}
+  .name{font-size:clamp(16px,3vw,22px);font-weight:900;word-break:keep-all}
+  .empty .name{font-size:15px;font-weight:700}
+  .steer{
+    width:28px;height:28px;border:4px solid #c1c6ce;border-radius:50%;
+    margin-bottom:5px;opacity:.9;position:relative;
+  }
+  .steer:after{
+    content:"";position:absolute;width:4px;height:12px;background:#c1c6ce;
+    left:8px;top:8px;border-radius:3px;
+  }
+  .baby{font-size:27px;margin-bottom:2px}
+  .footer-note{text-align:center;color:#9099a5;font-size:13px;margin-top:14px;line-height:1.6}
+  .flash{animation:flash .45s ease}
+  @keyframes flash{
+    0%{transform:scale(.96);filter:brightness(1.35)}
+    100%{transform:scale(1);filter:brightness(1)}
+  }
+  @media(max-width:600px){
+    .inputs{grid-template-columns:1fr 1fr}
+    .inputs input:last-child{grid-column:1/-1}
+    .car{padding-left:18px;padding-right:18px;border-radius:54px 54px 42px 42px}
+    .row{gap:9px;margin-bottom:18px}
+    .seat{min-height:82px;padding:10px 5px;border-radius:17px 17px 13px 13px}
+    .actions{flex-direction:column}
+  }
+
+  .seat.assigned{
+    border-width:2px;
+    box-shadow:
+      inset 0 -8px 0 rgba(0,0,0,.12),
+      0 0 0 3px color-mix(in srgb, var(--person-color) 22%, transparent),
+      0 8px 18px color-mix(in srgb, var(--person-color) 18%, transparent);
+  }
+  .seat.assigned::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--person-color) 26%, transparent),
+      transparent 55%
+    );
+    pointer-events:none;
+  }
+  .seat.assigned .role,
+  .seat.assigned .name{
+    position:relative;
+    z-index:1;
+  }
+  .seat.assigned .role{
+    color:color-mix(in srgb, var(--person-color) 72%, white);
+    font-weight:800;
+  }
+  .seat.assigned .name{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:64px;
+    max-width:95%;
+    padding:7px 12px;
+    border-radius:999px;
+    background:var(--person-color);
+    color:#111318;
+    box-shadow:0 4px 12px rgba(0,0,0,.22);
+  }
+
+
+  .random-overlay{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background:rgba(10,12,15,.90);
+    backdrop-filter:blur(8px);
+  }
+  .random-overlay.show{display:flex}
+  .random-box{
+    width:min(440px,92vw);
+    text-align:center;
+    padding:38px 24px 34px;
+    border:1px solid #5a626e;
+    border-radius:28px;
+    background:linear-gradient(160deg,#30353d,#1e2228);
+    box-shadow:0 24px 70px rgba(0,0,0,.45);
+  }
+  .random-icon{
+    font-size:54px;
+    animation:vanShake .38s ease-in-out infinite alternate;
+  }
+  .random-title{
+    margin-top:15px;
+    font-size:clamp(25px,6vw,34px);
+    font-weight:900;
+  }
+  .random-message{
+    min-height:28px;
+    margin-top:10px;
+    color:#c7ced8;
+    font-size:16px;
+    font-weight:700;
+  }
+  .dots span{
+    display:inline-block;
+    animation:dotBounce .8s infinite alternate;
+  }
+  .dots span:nth-child(2){animation-delay:.18s}
+  .dots span:nth-child(3){animation-delay:.36s}
+  .progress{
+    width:100%;
+    height:9px;
+    margin-top:24px;
+    overflow:hidden;
+    border-radius:999px;
+    background:#15181c;
+  }
+  .progress-bar{
+    width:0%;
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg,#FFD166,#7BDFF2,#F7A8B8);
+  }
+  .random-overlay.show .progress-bar{
+    animation:loadingBar 3.2s cubic-bezier(.2,.75,.25,1) forwards;
+  }
+  @keyframes vanShake{
+    from{transform:rotate(-5deg) translateX(-3px)}
+    to{transform:rotate(5deg) translateX(3px)}
+  }
+  @keyframes dotBounce{
+    from{transform:translateY(0);opacity:.45}
+    to{transform:translateY(-6px);opacity:1}
+  }
+  @keyframes loadingBar{
+    0%{width:3%}
+    35%{width:40%}
+    68%{width:72%}
+    90%{width:91%}
+    100%{width:100%}
+  }
+
+
+  /* 모바일 최적화 */
+  html{scroll-behavior:smooth}
+  body{
+    padding:14px 10px 24px;
+    min-height:100dvh;
+  }
+  .app{width:100%;max-width:560px}
+  h1{
+    font-size:clamp(24px,7vw,34px);
+    line-height:1.25;
+    margin-bottom:6px;
+    word-break:keep-all;
+  }
+  .sub{
+    font-size:14px;
+    margin-bottom:14px;
+    line-height:1.5;
+    padding:0 6px;
+  }
+  .controls{
+    position:sticky;
+    top:8px;
+    z-index:50;
+    padding:14px;
+    border-radius:18px;
+    margin-bottom:14px;
+    backdrop-filter:blur(12px);
+  }
+  .inputs{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .inputs input:last-child{grid-column:1/-1}
+  input{
+    min-height:46px;
+    font-size:16px;
+    padding:11px 12px;
+  }
+  .actions{
+    flex-direction:row;
+    gap:8px;
+    margin-top:10px;
+  }
+  button{
+    min-height:48px;
+    padding:12px 10px;
+    font-size:15px;
+    touch-action:manipulation;
+  }
+
+  .car{
+    width:100%;
+    padding:26px 12px 18px;
+    border-radius:38px 38px 30px 30px;
+    border-width:2px;
+    box-shadow:inset 0 0 28px rgba(0,0,0,.42),0 18px 36px rgba(0,0,0,.24);
+  }
+  .windshield{
+    height:24px;
+    margin:-12px 42px 18px;
+  }
+  .row{
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .row-label{
+    font-size:11px;
+    margin:-4px 0 6px;
+  }
+  .seat{
+    min-height:72px;
+    padding:8px 4px;
+    border-radius:15px 15px 11px 11px;
+  }
+  .role{font-size:10px;margin-bottom:3px}
+  .name{
+    font-size:clamp(14px,4.5vw,18px);
+    line-height:1.1;
+  }
+  .seat.assigned .name{
+    min-width:0;
+    width:auto;
+    max-width:96%;
+    padding:6px 8px;
+    font-size:clamp(13px,4vw,17px);
+  }
+  .steer{
+    width:22px;height:22px;border-width:3px;margin-bottom:3px;
+  }
+  .steer:after{left:6px;top:6px;height:9px}
+  .baby{font-size:22px;margin-bottom:0}
+  .footer-note{
+    font-size:12px;
+    margin:10px 4px 0;
+  }
+
+  .random-overlay{
+    padding:16px;
+    align-items:flex-end;
+  }
+  .random-box{
+    width:100%;
+    max-width:560px;
+    margin-bottom:10px;
+    padding:28px 18px 24px;
+    border-radius:24px;
+  }
+  .random-icon{font-size:46px}
+  .random-title{font-size:28px}
+  .random-message{
+    font-size:15px;
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    line-height:1.4;
+  }
+  .progress{margin-top:18px}
+
+  @media (max-width:380px){
+    body{padding-left:6px;padding-right:6px}
+    .controls{padding:10px}
+    .car{padding-left:8px;padding-right:8px}
+    .row{gap:6px}
+    .seat{min-height:66px}
+    .seat.assigned .name{font-size:13px;padding:5px 6px}
+    button{font-size:14px}
+  }
+
+
+  /* 모바일 터치 안정화 */
+  .controls{
+    position:relative !important;
+    top:auto !important;
+  }
+  button{
+    -webkit-appearance:none;
+    appearance:none;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    pointer-events:auto;
+  }
+  #shuffle{
+    position:relative;
+    z-index:5;
+  }
+  .random-overlay{
+    pointer-events:none;
+  }
+  .random-overlay.show{
+    pointer-events:auto;
+  }
+
+</style>
+</head>
+<body>
+<main class="app">
+  <h1>🌴우당탕탕 제주 랜덤 자리배치🌴</h1>
+  <p class="sub">이름 5개 입력 → 랜덤 배치 🎲<br>운전석·아기좌석은 고정 / 맨 뒷줄은 1명만 탑승</p>
+
+  <section class="controls">
+    <div class="inputs">
+      <input maxlength="12" placeholder="이름 1" aria-label="이름 1">
+      <input maxlength="12" placeholder="이름 2" aria-label="이름 2">
+      <input maxlength="12" placeholder="이름 3" aria-label="이름 3">
+      <input maxlength="12" placeholder="이름 4" aria-label="이름 4">
+      <input maxlength="12" placeholder="이름 5" aria-label="이름 5">
+    </div>
+    <div class="actions">
+      <button id="shuffle" type="button">🎲 자리 랜덤 배치</button>
+      <button id="reset" type="button">초기화</button>
+    </div>
+  </section>
+
+  <section class="car" aria-label="카니발 좌석 배치">
+    <div class="windshield"></div>
+
+    <div class="row-label">앞쪽 · 1열</div>
+    <div class="row two">
+      <div class="seat fixed">
+        <div class="steer"></div>
+        <div class="role">고정</div>
+        <div class="name">운전석</div>
+      </div>
+      <div class="seat random-seat" data-seat="front">
+        <div class="role">랜덤</div>
+        <div class="name">앞자리</div>
+      </div>
+    </div>
+
+    <div class="row-label">2열</div>
+    <div class="row two">
+      <div class="seat fixed">
+        <div class="baby">👶</div>
+        <div class="role">고정</div>
+        <div class="name">아기좌석</div>
+      </div>
+      <div class="seat random-seat" data-seat="second">
+        <div class="role">랜덤</div>
+        <div class="name">2열</div>
+      </div>
+    </div>
+
+    <div class="row-label">3열</div>
+    <div class="row two">
+      <div class="seat random-seat" data-seat="third-left">
+        <div class="role">랜덤</div>
+        <div class="name">3열</div>
+      </div>
+      <div class="seat random-seat" data-seat="third-right">
+        <div class="role">랜덤</div>
+        <div class="name">3열</div>
+      </div>
+    </div>
+
+    <div class="row-label">맨 뒤 · 4열 (1명만 탑승)</div>
+    <div class="row three" id="backRow">
+      <div class="seat empty back-seat" data-back="0"><div class="name">비움</div></div>
+      <div class="seat empty back-seat" data-back="1"><div class="name">비움</div></div>
+      <div class="seat empty back-seat" data-back="2"><div class="name">비움</div></div>
+    </div>
+  </section>
+
+  <p class="footer-note">※ 랜덤 버튼을 누를 때마다 5명의 위치와 맨 뒷줄에서 사용할 좌석 위치까지 다시 무작위로 정해집니다.</p>
+</main>
+
+<div class="random-overlay" id="randomOverlay" role="status" aria-live="polite">
+  <div class="random-box">
+    <div class="random-icon">🚐💨</div>
+    <div class="random-title">랜덤 배치중<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+    <div class="random-message" id="randomMessage">과연 누구 옆에 앉게 될까요? 👀</div>
+    <div class="progress"><div class="progress-bar"></div></div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  const inputs = Array.from(document.querySelectorAll('input'));
+  const fixedRandomSeats = Array.from(document.querySelectorAll('.random-seat'));
+  const backSeats = Array.from(document.querySelectorAll('.back-seat'));
+  const shuffleBtn = document.getElementById('shuffle');
+  const resetBtn = document.getElementById('reset');
+  const overlay = document.getElementById('randomOverlay');
+  const message = document.getElementById('randomMessage');
+
+  const personColors = ['#FFD166','#7BDFF2','#B2F7EF','#F7A8B8','#CDB4DB'];
+  let running = false;
+
+  function shuffleArray(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      const tmp = a[i];
+      a[i] = a[j];
+      a[j] = tmp;
+    }
+    return a;
+  }
+
+  function setSeat(seat, name, role, color){
+    seat.classList.remove('empty');
+    seat.classList.add('assigned');
+    seat.style.setProperty('--person-color', color);
+    seat.innerHTML = '<div class="role"></div><div class="name"></div>';
+    seat.querySelector('.role').textContent = role || '랜덤';
+    seat.querySelector('.name').textContent = name;
+    seat.classList.remove('flash');
+    void seat.offsetWidth;
+    seat.classList.add('flash');
+  }
+
+  function setEmpty(seat){
+    seat.classList.add('empty');
+    seat.classList.remove('assigned');
+    seat.style.removeProperty('--person-color');
+    seat.innerHTML = '<div class="name">비움</div>';
+  }
+
+  function runShuffle(){
+    if(running) return;
+
+    const names = inputs.map(function(i){ return i.value.trim(); });
+    if(names.some(function(n){ return !n; })){
+      alert('5명의 이름을 모두 입력해 주세요.');
+      return;
+    }
+
+    if((new Set(names)).size !== names.length){
+      if(!confirm('같은 이름이 있습니다. 그대로 랜덤 배치를 진행할까요?')) return;
+    }
+
+    running = true;
+    shuffleBtn.disabled = true;
+
+    const messages = [
+      '과연 누구 옆에 앉게 될까요? 👀',
+      '제주도의 운명이 정해지는 중... 🌴',
+      '뒷자리 당첨자는 누구?! 😱',
+      '자리 섞는 중... 두구두구두구 🥁'
+    ];
+
+    overlay.classList.remove('show');
+    void overlay.offsetWidth;
+    overlay.classList.add('show');
+
+    let messageIndex = 0;
+    message.textContent = messages[0];
+
+    const messageTimer = setInterval(function(){
+      messageIndex = (messageIndex + 1) % messages.length;
+      message.textContent = messages[messageIndex];
+    }, 780);
+
+    const people = shuffleArray(names.map(function(name, idx){
+      return {name:name, color:personColors[idx]};
+    }));
+    const backIndex = Math.floor(Math.random()*3);
+
+    setTimeout(function(){
+      clearInterval(messageTimer);
+
+      fixedRandomSeats.forEach(function(seat, idx){
+        setSeat(seat, people[idx].name, '랜덤', people[idx].color);
+      });
+
+      backSeats.forEach(setEmpty);
+      setSeat(backSeats[backIndex], people[4].name, '랜덤 · 맨 뒤', people[4].color);
+      message.textContent = '자리 배치 완료! 🎉';
+
+      setTimeout(function(){
+        overlay.classList.remove('show');
+        shuffleBtn.disabled = false;
+        running = false;
+        document.querySelector('.car').scrollIntoView({behavior:'smooth', block:'start'});
+      }, 650);
+    }, 3200);
+  }
+
+  function resetAll(){
+    running = false;
+    shuffleBtn.disabled = false;
+    overlay.classList.remove('show');
+
+    inputs.forEach(function(i){ i.value=''; });
+    const labels = ['앞자리','2열','3열','3열'];
+
+    fixedRandomSeats.forEach(function(seat, idx){
+      seat.classList.remove('empty','flash','assigned');
+      seat.style.removeProperty('--person-color');
+      seat.innerHTML = '<div class="role">랜덤</div><div class="name">' + labels[idx] + '</div>';
+    });
+
+    backSeats.forEach(setEmpty);
+    if(inputs[0]) inputs[0].focus();
+  }
+
+  // 모바일 Safari/Chrome 모두 안정적으로 동작하도록 일반 click 이벤트 사용
+  shuffleBtn.onclick = runShuffle;
+  resetBtn.onclick = resetAll;
+
+  inputs.forEach(function(input, idx){
+    input.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        if(idx < inputs.length-1) inputs[idx+1].focus();
+        else {
+          input.blur();
+          runShuffle();
+        }
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
